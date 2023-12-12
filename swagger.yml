@@ -1,0 +1,5 @@
+swagger: '2.0'
+info:
+  title: 'Image Prediction API'
+  description: 'API for predicting similar images.'
+  version: '1.0'

@@ -1,0 +1,23 @@
+# Virtual environment
+venv/
+
+# Data and models directories
+data/
+models/
+
+# Temporary directory
+temp/
+
+# Testing scripts
+tests/
+
+# Compiled Python files
+__pycache__/
+
+# Ignore generated files
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore local settings
+.env

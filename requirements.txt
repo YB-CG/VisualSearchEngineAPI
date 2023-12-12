@@ -1,0 +1,9 @@
+Flask
+Flasgger
+Flask-CORS
+Keras
+numpy
+Pillow
+pandas
+requests
+virtualenv
