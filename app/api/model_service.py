@@ -80,6 +80,7 @@ def load_and_process_data():
     return listing_data
 
 # def process_image(image_file, url, listing_data):
+# def process_image(image_file, url, listing_data):
 def process_image(image_file=None, image_url=None, listing_data=None):
     try:
         if image_file:
@@ -110,6 +111,12 @@ def process_image(image_file=None, image_url=None, listing_data=None):
 
         # Extracting additional information
         top_10_similar_imgs = listing_data.iloc[top_10_indexes]['modelImages_path']
+        brand_names = listing_data.iloc[top_10_indexes]['brand.name']
+        prices = listing_data.iloc[top_10_indexes]['priceInfo.formattedFinalPrice']
+        available_sizes = listing_data.iloc[top_10_indexes]['availableSizes']
+        short_descriptions = listing_data.iloc[top_10_indexes]['shortDescription']
+        stock_totals = listing_data.iloc[top_10_indexes]['stockTotal'].astype(int).tolist()
+
         # Prepare the result as a dictionary
         result = {
             'top_10_indexes': [int(idx) for idx in top_10_indexes],
@@ -118,9 +125,14 @@ def process_image(image_file=None, image_url=None, listing_data=None):
             'similar_images': [
                 {
                     'img_path': img_path,
+                    'brand': brand,
+                    'price': price,
+                    'availableSizes': available_size,
+                    'shortDescription': short_description,
+                    'stockTotal': stock_total
                 }
-                for img_path in zip(
-                    top_10_similar_imgs
+                for img_path, brand, price, available_size, short_description, stock_total in zip(
+                    top_10_similar_imgs, brand_names, prices, available_sizes, short_descriptions, stock_totals
                 )
             ]
         }
