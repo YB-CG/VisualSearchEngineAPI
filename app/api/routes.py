@@ -18,7 +18,7 @@ def predict():
       - name: image
         in: formData
         type: file
-        required: true
+        required: false
         description: The image file to process.
       - name: url
         in: formData
@@ -34,14 +34,15 @@ def predict():
         description: Internal server error.
     """
     try:
-        if 'image' not in request.files:
-            return jsonify({'error': 'No image provided'}), 400
+        image_file = request.files.get('image')
+        url = request.form.get('url')
 
-        image_file = request.files['image']
-        # url = request.form.get('url')
+        if not image_file and not url:
+            return jsonify({'error': 'Either image file or URL must be provided'}), 400
+        elif image_file and url:
+            return jsonify({'error': 'Choose either image file or URL, not both'}), 400
 
-        # result = process_image(image_file, url, listing_data)
-        result = process_image(image_file, listing_data)
+        result = process_image(image_file, url, listing_data)
 
         return jsonify(result)
 

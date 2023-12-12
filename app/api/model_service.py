@@ -80,65 +80,62 @@ def load_and_process_data():
     return listing_data
 
 # def process_image(image_file, url, listing_data):
-def process_image(image_file, listing_data):
+def process_image(image_file=None, image_url=None, listing_data=None):
     try:
         if image_file:
             # Save the uploaded image to a temporary location
             filename = secure_filename(image_file.filename)
             temp_path = os.path.join('/home/skay/Documents/Project/Capstone/VIsual-Search-Engine/API/temp', filename)
             image_file.save(temp_path)
-
-            # Open the saved image
             query_img = Image.open(temp_path)
+        elif image_url:
+            # Load the image from the URL
+            response = requests.get(image_url)
+            response.raise_for_status()
+            query_img = Image.open(BytesIO(response.content))
+        else:
+            return json.dumps({'error': 'No image file or URL provided'})
 
-            # Extract features from the query image using the loaded feature extractor
-            query_features = vgg_feature_extractor.extract_features(query_img)
+        # Extract features from the query image using the loaded feature extractor
+        query_features = vgg_feature_extractor.extract_features(query_img)
 
-            # Compute similarity using Euclidean Distance for the loaded model
-            similarity_images = {}
-            for idx, feat in loaded_features.items():
-                similarity_images[idx] = np.sum((query_features - feat)**2) ** 0.5
+        # Compute similarity using Euclidean Distance for the loaded model
+        similarity_images = {}
+        for idx, feat in loaded_features.items():
+            similarity_images[idx] = np.sum((query_features - feat)**2) ** 0.5
 
-            # Extract the top 10 similar images
-            similarity_sorted = sorted(similarity_images.items(), key=lambda x: x[1])
-            top_10_indexes = [idx for idx, _ in similarity_sorted[:10]]
+        # Extract the top 10 similar images
+        similarity_sorted = sorted(similarity_images.items(), key=lambda x: x[1])
+        top_10_indexes = [idx for idx, _ in similarity_sorted[:10]]
 
-            # Extracting additional information
-            top_10_similar_imgs = listing_data.iloc[top_10_indexes]['modelImages_path']
-            brand_names = listing_data.iloc[top_10_indexes]['brand.name']
-            prices = listing_data.iloc[top_10_indexes]['priceInfo.formattedFinalPrice']
-            available_sizes = listing_data.iloc[top_10_indexes]['availableSizes']
-            short_descriptions = listing_data.iloc[top_10_indexes]['shortDescription']
-            stock_totals = listing_data.iloc[top_10_indexes]['stockTotal'].astype(int).tolist()
+        # Extracting additional information
+        top_10_similar_imgs = listing_data.iloc[top_10_indexes]['modelImages_path']
+        # Prepare the result as a dictionary
+        result = {
+            'top_10_indexes': [int(idx) for idx in top_10_indexes],
+            'query_image_path': temp_path if image_file else None,
+            'query_image_url': image_url if image_url else None,
+            'similar_images': [
+                {
+                    'img_path': img_path,
+                }
+                for img_path in zip(
+                    top_10_similar_imgs
+                )
+            ]
+        }
 
-            # Prepare the result as a dictionary
-            result = {
-                'top_10_indexes': top_10_indexes,
-                'query_image_path': temp_path,
-                'similar_images': [
-                    {
-                        'img_path': img_path,
-                        'brand': brand,
-                        'price': price,
-                        'availableSizes': available_size,
-                        'shortDescription': short_description,
-                        'stockTotal': stock_total
-                    }
-                    for img_path, brand, price, available_size, short_description, stock_total in zip(
-                        top_10_similar_imgs, brand_names, prices, available_sizes, short_descriptions, stock_totals
-                    )
-                ]
-            }
+        # Serialize the result dictionary to JSON format
+        json_result = json.dumps(result)
 
-            # Serialize the result dictionary to JSON format
-            json_result = json.dumps(result)
-
-            return json_result
+        return json_result
 
     except Image.DecompressionBombError as e:
         # You might want to return a JSON error message here as well
         return json.dumps({'error': f"DecompressionBombError for the query image: {e}"})
     except UnidentifiedImageError as e:
         return json.dumps({'error': f"UnidentifiedImageError for the query image: {e}"})
+    except requests.RequestException as e:
+        return json.dumps({'error': f"Error fetching image from URL: {e}"})
     except Exception as e:
         return json.dumps({'error': str(e)})
