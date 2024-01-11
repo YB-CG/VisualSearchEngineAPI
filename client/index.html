@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visual Search Engine</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <style>
+        body {
+            padding: 20px;
+        }
+
+        .result-container {
+            margin-top: 20px;
+        }
+
+        .result-item {
+            margin-bottom: 20px;
+        }
+
+        .result-image {
+            max-width: 100%;
+            height: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1 class="mb-4">Visual Search Engine</h1>
+
+    <form id="imageForm" enctype="multipart/form-data">
+        <div class="form-group">
+            <label for="imageInput">Select Image:</label>
+            <input type="file" class="form-control-file" id="imageInput" name="image">
+        </div>
+        <button type="button" class="btn btn-primary" onclick="predict()">Predict</button>
+    </form>
+
+    <div id="resultContainer" class="result-container"></div>
+
+    <script>
+        function predict() {
+            var form = document.getElementById('imageForm');
+            var formData = new FormData(form);
+    
+            fetch('http://localhost:5000/api/predict', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => displayResult(data))
+            .catch(error => console.error('Error:', error));
+        }
+    
+        function displayResult(result) {
+            var resultContainer = document.getElementById('resultContainer');
+            resultContainer.innerHTML = '';
+    
+            // Display query image
+            if (result.query_image_path) {
+                var queryImage = document.createElement('img');
+                queryImage.src = result.query_image_path;
+                queryImage.alt = 'Query Image';
+                queryImage.className = 'result-image';
+                resultContainer.appendChild(queryImage);
+            }
+    
+            // Display similar images
+            result.similar_images.forEach(function(item, index) {
+                var resultItem = document.createElement('div');
+                resultItem.className = 'result-item';
+    
+                var image = document.createElement('img');
+                image.src = item.img_path;
+                image.alt = 'Similar Image ' + (index + 1);
+                image.className = 'result-image';
+    
+                var brand = document.createElement('p');
+                brand.innerText = 'Brand: ' + item.brand;
+    
+                var price = document.createElement('p');
+                price.innerText = 'Price: ' + item.price;
+    
+                var description = document.createElement('p');
+                description.innerText = 'Description: ' + item.shortDescription;
+    
+                var stock = document.createElement('p');
+                stock.innerText = 'Stock Total: ' + item.stockTotal;
+    
+                resultItem.appendChild(image);
+                resultItem.appendChild(brand);
+                resultItem.appendChild(price);
+                resultItem.appendChild(description);
+                resultItem.appendChild(stock);
+    
+                resultContainer.appendChild(resultItem);
+            });
+        }
+    </script>
+    
+</body>
+</html>
