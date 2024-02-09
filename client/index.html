@@ -1,101 +1,271 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Visual Search Engine</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <title>Visual Search Results</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
-            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
         }
 
-        .result-container {
-            margin-top: 20px;
+        .container {
+            max-width: 800px;
+            margin: 50px auto;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            overflow: hidden;
+            animation: fadeIn 1s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .custom-file-input {
+            display: none;
+        }
+
+        .custom-file-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
+            border-radius: 10px;
+            background-color: #007BFF;
+            color: #fff;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .custom-file-label:hover {
+            background-color: #0056b3;
+        }
+
+        .btn-primary {
+            background-color: #28a745;
+            border-color: #28a745;
+            transition: background-color 0.3s;
+        }
+
+        .btn-primary:hover {
+            background-color: #218838;
+            border-color: #218838;
+        }
+
+        #results-container {
+            margin-top: 30px;
         }
 
         .result-item {
+            background-color: #fff;
+            border: 1px solid #dee2e6;
+            border-radius: 15px;
+            overflow: hidden;
             margin-bottom: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
         }
 
-        .result-image {
+        .result-item:hover {
+            transform: scale(1.02);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        .result-item img {
             max-width: 100%;
             height: auto;
+            border-top-left-radius: 15px;
+            border-top-right-radius: 15px;
+        }
+
+        .details {
+            padding: 20px;
+            text-align: left;
+        }
+
+        .details p {
+            margin: 5px 0;
+        }
+
+        .upload-feedback {
+            margin-top: 20px;
+            display: none;
+            font-weight: bold;
+            color: #28a745;
+            animation: fadeInFeedback 1s ease-out;
+        }
+
+        @keyframes fadeInFeedback {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .spinner-border {
+            display: none;
+            width: 2rem;
+            height: 2rem;
+            margin-bottom: 2px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
     </style>
 </head>
+
 <body>
-    <h1 class="mb-4">Visual Search Engine</h1>
-
-    <form id="imageForm" enctype="multipart/form-data">
-        <div class="form-group">
-            <label for="imageInput">Select Image:</label>
-            <input type="file" class="form-control-file" id="imageInput" name="image">
+    <div class="container">
+        <h2 class="mb-4" style="color: #007BFF;">Search Engine for Fashion Products</h2>
+        <div class="mb-3">
+            <label for="imageInput" class="custom-file-label">
+                <span id="fileLabel">Choose an image to upload</span>
+                <input type="file" id="imageInput" accept="image/*" class="custom-file-input" onchange="updateFileLabel()">
+            </label>
         </div>
-        <button type="button" class="btn btn-primary" onclick="predict()">Predict</button>
-    </form>
+        <div class="upload-feedback" id="loadingFeedback">
+            <span class="spinner-border" role="status" aria-hidden="true"></span>
+            Loading...
+        </div>
+        <div class="upload-feedback" id="successFeedback" style="color: #218838;">Ready!</div>
+        <button onclick="uploadImage()" class="btn btn-primary">Search Similar Images</button>
 
-    <div id="resultContainer" class="result-container"></div>
+        <div id="results-container" class="mt-4"></div>
+    </div>
+
+    <!-- Bootstrap JS and Popper.js -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
-        function predict() {
-            var form = document.getElementById('imageForm');
-            var formData = new FormData(form);
-    
-            fetch('http://localhost:5000/api/predict', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => displayResult(data))
-            .catch(error => console.error('Error:', error));
-        }
-    
-        function displayResult(result) {
-            var resultContainer = document.getElementById('resultContainer');
-            resultContainer.innerHTML = '';
-    
-            // Display query image
-            if (result.query_image_path) {
-                var queryImage = document.createElement('img');
-                queryImage.src = result.query_image_path;
-                queryImage.alt = 'Query Image';
-                queryImage.className = 'result-image';
-                resultContainer.appendChild(queryImage);
+        function updateFileLabel() {
+            const fileInput = document.getElementById('imageInput');
+            const fileLabel = document.getElementById('fileLabel');
+            if (fileInput.files.length > 0) {
+                fileLabel.textContent = fileInput.files[0].name;
+            } else {
+                fileLabel.textContent = 'Choose an image to upload';
             }
-    
-            // Display similar images
-            result.similar_images.forEach(function(item, index) {
-                var resultItem = document.createElement('div');
-                resultItem.className = 'result-item';
-    
-                var image = document.createElement('img');
-                image.src = item.img_path;
-                image.alt = 'Similar Image ' + (index + 1);
-                image.className = 'result-image';
-    
-                var brand = document.createElement('p');
-                brand.innerText = 'Brand: ' + item.brand;
-    
-                var price = document.createElement('p');
-                price.innerText = 'Price: ' + item.price;
-    
-                var description = document.createElement('p');
-                description.innerText = 'Description: ' + item.shortDescription;
-    
-                var stock = document.createElement('p');
-                stock.innerText = 'Stock Total: ' + item.stockTotal;
-    
-                resultItem.appendChild(image);
-                resultItem.appendChild(brand);
-                resultItem.appendChild(price);
-                resultItem.appendChild(description);
-                resultItem.appendChild(stock);
-    
-                resultContainer.appendChild(resultItem);
-            });
+        }
+
+        function uploadImage() {
+            const input = document.getElementById('imageInput');
+            const file = input.files[0];
+
+            if (file) {
+                const formData = new FormData();
+                formData.append('image', file);
+                const resultsContainer = document.getElementById('results-container');
+                const loadingFeedback = document.getElementById('loadingFeedback');
+                const successFeedback = document.getElementById('successFeedback');
+
+                // Display loading spinner and feedback
+                loadingFeedback.style.display = 'block';
+                successFeedback.style.display = 'none';
+
+                // Fetch data from the API using the uploaded image
+                fetch('http://localhost:5000/api/predict', {
+                    method: 'POST',
+                    body: formData
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        // Clear previous results
+                        resultsContainer.innerHTML = '';
+
+                        const sanitizedJson = data.replace(/"availableSizes":\s*NaN/g, '"availableSizes": "N/A"');
+                        const parsedResponse = JSON.parse(sanitizedJson);
+
+                        // Display query image
+                        const queryImageContainer = document.getElementById('results-container');
+                        const queryImage = document.createElement('img');
+                        queryImage.src = parsedResponse.query_image_path;
+                        queryImage.alt = 'Query Image';
+                        queryImage.className = 'img-fluid rounded-top';
+                        queryImageContainer.appendChild(queryImage);
+
+                        // Display similar images
+                        const similarImages = parsedResponse.similar_images;
+                        similarImages.forEach(image => {
+                            const resultItem = document.createElement('div');
+                            resultItem.className = 'result-item';
+
+                            const imageElement = document.createElement('img');
+                            imageElement.src = image.img_path;
+                            imageElement.alt = 'Similar Image';
+                            imageElement.className = 'img-fluid';
+
+                            const detailsContainer = document.createElement('div');
+                            detailsContainer.className = 'details';
+
+                            const brand = document.createElement('p');
+                            brand.textContent = `Brand: ${image.brand}`;
+
+                            const price = document.createElement('p');
+                            price.textContent = `Price: ${image.price}`;
+
+                            const shortDescription = document.createElement('p');
+                            shortDescription.textContent = `Product: ${image.shortDescription}`;
+
+                            const stockTotal = document.createElement('p');
+                            stockTotal.textContent = `Stock: ${image.stockTotal}`;
+
+                            detailsContainer.appendChild(brand);
+                            detailsContainer.appendChild(price);
+                            detailsContainer.appendChild(shortDescription);
+                            detailsContainer.appendChild(stockTotal);
+
+                            resultItem.appendChild(imageElement);
+                            resultItem.appendChild(detailsContainer);
+                            queryImageContainer.appendChild(resultItem);
+                        });
+
+                        // Display success feedback
+                        loadingFeedback.style.display = 'none';
+                        successFeedback.style.display = 'block';
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        // Display error feedback if needed
+                    });
+            }
         }
     </script>
-    
 </body>
+
 </html>
