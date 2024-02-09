@@ -55,13 +55,17 @@ def load_and_process_data():
     cutout_images = os.listdir(cutout_img_dir)
     model_images = os.listdir(model_img_dir)
 
+    # def extractImageName(x):
+    #     # 1. Invert the image path
+    #     x_inv = x[::-1]
+    #     # 2. Find the index of '/'
+    #     slash_idx = x_inv.find('/')
+    #     # 3. Extract the text after the -slash_idx
+    #     return x[-slash_idx:]
     def extractImageName(x):
-        # 1. Invert the image path
-        x_inv = x[::-1]
-        # 2. Find the index of '/'
-        slash_idx = x_inv.find('/')
-        # 3. Extract the text after the -slash_idx
-        return x[-slash_idx:]
+    # Use os.path.basename to extract the filename from the path
+        return os.path.basename(x)
+
 
     listing_data['cutOutimageNames'] = listing_data['images.cutOut'].apply(lambda x: extractImageName(x))
     listing_data['modelimageNames'] = listing_data['images.model'].apply(lambda x: extractImageName(x))
