@@ -3,3 +3,27 @@ info:
   title: 'Image Prediction API'
   description: 'API for predicting similar images.'
   version: '1.0'
+
+/api/predict:
+  post:
+    summary: Endpoint to predict similar images.
+    consumes:
+      - multipart/form-data
+    parameters:
+      - name: image
+        in: formData
+        type: file
+        required: false
+        description: The image file to process.
+      - name: url
+        in: formData
+        type: string
+        required: false
+        description: The URL of the image to process.
+    responses:
+      200:
+        description: The prediction result.
+      400:
+        description: Bad request.
+      500:
+        description: Internal server error.
