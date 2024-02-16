@@ -1,6 +1,6 @@
 # app/api/routes.py
 
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, send_from_directory
 from flasgger import swag_from
 from .model_service import process_image, load_and_process_data
 from flask_cors import cross_origin
@@ -9,8 +9,15 @@ api_bp = Blueprint('api', __name__)
 
 listing_data = load_and_process_data()
 
+@api_bp.route('/<path:filename>')
+def get_model(filename):
+    print(f"Requested filename: {filename}")
+    return send_from_directory('/home/skay/Documents/Project/Capstone/VIsual-Search-Engine/API', filename)
+
+
+
 @api_bp.route('/predict', methods=['POST'])
-@swag_from('/home/skay/Documents/Project/Capstone/VIsual-Search-Engine/API/swagger.yml')  # Point to the Swagger YAML file for this route
+@swag_from('API/swagger.yml')  # Point to the Swagger YAML file for this route
 @cross_origin(supports_credentials=True)
 def predict():
     """Endpoint to predict similar images.

@@ -224,14 +224,18 @@
                         similarImages.forEach(image => {
                             const resultItem = document.createElement('div');
                             resultItem.className = 'result-item';
-
+                            const apiBaseUrl = 'http://localhost:5000/api/'; // Update with the API base URL
+                            
                             const imageElement = document.createElement('img');
-                            imageElement.src = image.img_path;
+                            imageElement.src = `${apiBaseUrl}/${image?.img_path}`;
                             imageElement.alt = 'Similar Image';
                             imageElement.className = 'img-fluid';
 
                             const detailsContainer = document.createElement('div');
                             detailsContainer.className = 'details';
+
+                            const id = document.createElement('p');
+                            id.textContent = `Id: ${image.id}`;
 
                             const brand = document.createElement('p');
                             brand.textContent = `Brand: ${image.brand}`;
@@ -245,6 +249,7 @@
                             const stockTotal = document.createElement('p');
                             stockTotal.textContent = `Stock: ${image.stockTotal}`;
 
+                            detailsContainer.appendChild(id);
                             detailsContainer.appendChild(brand);
                             detailsContainer.appendChild(price);
                             detailsContainer.appendChild(shortDescription);

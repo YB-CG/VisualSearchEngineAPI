@@ -13,6 +13,11 @@ import requests
 import json
 from werkzeug.utils import secure_filename
 
+
+# Define relative paths for your image directories
+cutout_img_dir = "data/cutout-img/cutout"
+model_img_dir = "data/model-img/model"
+
 # Load saved features from file
 with open('models/image_features_vgg.pkl', 'rb') as f:
     loaded_features = pickle.load(f)
@@ -37,7 +42,7 @@ vgg_feature_extractor = FeatureExtractor()
 
 def load_and_process_data():
     # Read the data files
-    listing_data = pd.read_csv("/home/skay/Documents/Project/Capstone/VIsual-Search-Engine/API/data/current_farfetch_listings.csv")
+    listing_data = pd.read_csv("data/current_farfetch_listings.csv")
     # drop the unnamed: 0 column
     listing_data.drop('Unnamed: 0', axis=1, inplace=True)
     # Drop priceInfo.installmentsLabel
@@ -47,25 +52,13 @@ def load_and_process_data():
     # fill the null values in priceInfo.discountLabel with 0
     listing_data['priceInfo.discountLabel'] = listing_data['priceInfo.discountLabel'].fillna(0)
 
-    # Store the directory path in a variable
-    cutout_img_dir = "/home/skay/Documents/Project/Capstone/VIsual-Search-Engine/API/data/cutout-img/cutout"
-    model_img_dir = "/home/skay/Documents/Project/Capstone/VIsual-Search-Engine/API/data/model-img/model"
-
     # list the directories
     cutout_images = os.listdir(cutout_img_dir)
     model_images = os.listdir(model_img_dir)
 
-    # def extractImageName(x):
-    #     # 1. Invert the image path
-    #     x_inv = x[::-1]
-    #     # 2. Find the index of '/'
-    #     slash_idx = x_inv.find('/')
-    #     # 3. Extract the text after the -slash_idx
-    #     return x[-slash_idx:]
+    # Function to extract image name from path
     def extractImageName(x):
-    # Use os.path.basename to extract the filename from the path
         return os.path.basename(x)
-
 
     listing_data['cutOutimageNames'] = listing_data['images.cutOut'].apply(lambda x: extractImageName(x))
     listing_data['modelimageNames'] = listing_data['images.model'].apply(lambda x: extractImageName(x))
@@ -76,14 +69,15 @@ def load_and_process_data():
     # Reset the index
     listing_data.reset_index(drop=True, inplace=True)
     # Add entire paths to cutOut and modelImages
-    listing_data['cutOutImages_path'] = cutout_img_dir + '/' + listing_data['cutOutimageNames']
-    listing_data['modelImages_path'] = model_img_dir + '/' + listing_data['modelimageNames']
+    listing_data['cutOutImages_path'] = listing_data['cutOutimageNames'].apply(lambda x: os.path.join(cutout_img_dir, x))
+    listing_data['modelImages_path'] = listing_data['modelimageNames'].apply(lambda x: os.path.join(model_img_dir, x))
+
+    # listing_data['cutOutImages_path'] = os.path.join(cutout_img_dir, listing_data['cutOutimageNames'])
+    # listing_data['modelImages_path'] = os.path.join(model_img_dir, listing_data['modelimageNames'])
     # Drop the cutOutimageNames, cutOutimageNames
     listing_data.drop(['cutOutimageNames', 'cutOutimageNames'], axis=1, inplace=True)
 
     return listing_data
-
-# def process_image(image_file, url, listing_data):
 # def process_image(image_file, url, listing_data):
 def process_image(image_file=None, image_url=None, listing_data=None):
     try:
@@ -111,23 +105,23 @@ def process_image(image_file=None, image_url=None, listing_data=None):
 
         # Extract the top 10 similar images
         similarity_sorted = sorted(similarity_images.items(), key=lambda x: x[1])
-        top_10_indexes = [idx for idx, _ in similarity_sorted[:10]]
+        top_12_indexes = [idx for idx, _ in similarity_sorted[:12]]
 
         # Extracting additional information
-        top_10_similar_imgs = listing_data.iloc[top_10_indexes]['modelImages_path']
-        brand_names = listing_data.iloc[top_10_indexes]['brand.name']
-        prices = listing_data.iloc[top_10_indexes]['priceInfo.formattedFinalPrice']
-        available_sizes = listing_data.iloc[top_10_indexes]['availableSizes']
-        short_descriptions = listing_data.iloc[top_10_indexes]['shortDescription']
-        stock_totals = listing_data.iloc[top_10_indexes]['stockTotal'].astype(int).tolist()
+
+        top_12_similar_imgs = listing_data.iloc[top_12_indexes]['modelImages_path']
+        brand_names = listing_data.iloc[top_12_indexes]['brand.name']
+        prices = listing_data.iloc[top_12_indexes]['priceInfo.formattedFinalPrice']
+        available_sizes = listing_data.iloc[top_12_indexes]['availableSizes']
+        short_descriptions = listing_data.iloc[top_12_indexes]['shortDescription']
+        stock_totals = listing_data.iloc[top_12_indexes]['stockTotal'].astype(int).tolist()
 
         # Prepare the result as a dictionary
         result = {
-            'top_10_indexes': [int(idx) for idx in top_10_indexes],
-            'query_image_path': temp_path if image_file else None,
-            'query_image_url': image_url if image_url else None,
+
             'similar_images': [
                 {
+                    'id': int(idx),
                     'img_path': img_path,
                     'brand': brand,
                     'price': price,
@@ -135,8 +129,8 @@ def process_image(image_file=None, image_url=None, listing_data=None):
                     'shortDescription': short_description,
                     'stockTotal': stock_total
                 }
-                for img_path, brand, price, available_size, short_description, stock_total in zip(
-                    top_10_similar_imgs, brand_names, prices, available_sizes, short_descriptions, stock_totals
+                for idx, img_path, brand, price, available_size, short_description, stock_total in zip(
+                    top_12_indexes, top_12_similar_imgs, brand_names, prices, available_sizes, short_descriptions, stock_totals
                 )
             ]
         }
