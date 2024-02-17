@@ -110,9 +110,9 @@ def process_image(image_file=None, image_url=None, listing_data=None):
         # Extracting additional information
 
         top_12_similar_imgs = listing_data.iloc[top_12_indexes]['modelImages_path']
+        top_12_similar_cutOut_imgs = listing_data.iloc[top_12_indexes]['cutOutImages_path']
         brand_names = listing_data.iloc[top_12_indexes]['brand.name']
-        prices = listing_data.iloc[top_12_indexes]['priceInfo.formattedFinalPrice']
-        available_sizes = listing_data.iloc[top_12_indexes]['availableSizes']
+        prices = listing_data.iloc[top_12_indexes]['priceInfo.finalPrice']
         short_descriptions = listing_data.iloc[top_12_indexes]['shortDescription']
         stock_totals = listing_data.iloc[top_12_indexes]['stockTotal'].astype(int).tolist()
 
@@ -123,14 +123,14 @@ def process_image(image_file=None, image_url=None, listing_data=None):
                 {
                     'id': int(idx),
                     'img_path': img_path,
+                    'Detail_img_path': Detail_img_path,
                     'brand': brand,
                     'price': price,
-                    'availableSizes': available_size,
                     'shortDescription': short_description,
                     'stockTotal': stock_total
                 }
-                for idx, img_path, brand, price, available_size, short_description, stock_total in zip(
-                    top_12_indexes, top_12_similar_imgs, brand_names, prices, available_sizes, short_descriptions, stock_totals
+                for idx, img_path, Detail_img_path, brand, price, short_description, stock_total in zip(
+                    top_12_indexes, top_12_similar_cutOut_imgs, top_12_similar_imgs, brand_names, prices, short_descriptions, stock_totals
                 )
             ]
         }
